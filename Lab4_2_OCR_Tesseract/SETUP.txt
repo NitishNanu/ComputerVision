@@ -1,0 +1,247 @@
+# INSTALLATION AND QUICK START GUIDE
+# Lab 4.2 - OCR with Tesseract
+
+## Prerequisites
+
+Before running the OCR pipeline, ensure you have:
+- Python 3.8 or higher
+- VS Code
+- pip (Python package manager)
+
+## Step 1: Install Tesseract OCR Engine
+
+### Windows
+
+1. Download the installer from the official repository:
+   https://github.com/UB-Mannheim/tesseract/wiki
+
+2. Run the installer (e.g., `tesseract-ocr-w64-setup-v5.x.exe`)
+
+3. During installation:
+   - Accept the default installation path: `C:\Program Files\Tesseract-OCR`
+   - Ensure all language packs needed are selected (at minimum: English)
+
+4. Verify installation:
+   ```powershell
+   tesseract --version
+   ```
+   Should output version information.
+
+### macOS
+
+```bash
+brew install tesseract
+```
+
+Verify:
+```bash
+tesseract --version
+```
+
+### Linux (Ubuntu/Debian)
+
+```bash
+sudo apt-get update
+sudo apt-get install tesseract-ocr
+```
+
+Verify:
+```bash
+tesseract --version
+```
+
+## Step 2: Install Python Dependencies
+
+Open terminal in the Lab4_2_OCR_Tesseract folder and run:
+
+```bash
+pip install -r requirements.txt
+```
+
+This installs:
+- pytesseract (Python wrapper for Tesseract)
+- Pillow (image processing)
+- OpenCV (advanced preprocessing)
+- numpy (numerical operations)
+
+## Step 3: Configure Tesseract Path (Windows Only)
+
+If you installed Tesseract in a non-default location, edit `ocr_pipeline.py`:
+
+Find this line (around line 300):
+```python
+# pytesseract.pytesseract.pytesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+```
+
+Uncomment it and update the path if needed:
+```python
+pytesseract.pytesseract.pytesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+```
+
+## Step 4: Run the Pipeline
+
+In terminal, from the Lab4_2_OCR_Tesseract folder:
+
+```bash
+python ocr_pipeline.py
+```
+
+### First Run Behavior
+
+The script will:
+1. Check if `input_documents/` has images
+2. If empty: Automatically create 5 sample invoice images
+3. Process all images
+4. Generate outputs:
+   - `output_images/` → Preprocessed images
+   - `output_json/` → Extracted data as JSON
+   - `accuracy_report.txt` → Accuracy comparison
+
+### Expected Output
+
+```
+================================================================================
+OCR PIPELINE WITH TESSERACT - Lab 4.2
+================================================================================
+
+✓ Directory 'output_images' ready
+✓ Directory 'output_json' ready
+
+📋 Creating sample invoice images for testing...
+  ✓ Created input_documents/sample_invoice_01.png
+  ✓ Created input_documents/sample_invoice_02.png
+  ✓ Created input_documents/sample_invoice_03.png
+  ✓ Created input_documents/sample_invoice_04.png
+  ✓ Created input_documents/sample_invoice_05.png
+✓ Sample images created successfully
+
+Found 5 image(s) to process
+
+[1/5] Processing: sample_invoice_01.png
+--------
+✓ Loaded image: sample_invoice_01.png
+  Before preprocessing: 45 characters
+  After preprocessing: 52 characters
+  Extracted: 1 dates, 1 amounts, 1 emails
+✓ Saved preprocessed image: sample_invoice_01_preprocessed.png
+✓ Saved JSON: sample_invoice_01_extracted.json
+
+... (continues for all 5 images) ...
+
+================================================================================
+OCR ACCURACY COMPARISON REPORT
+Generated: 2024-02-25 10:30:45
+================================================================================
+
+SUMMARY STATISTICS
+------
+Total characters detected WITHOUT preprocessing: 225
+Total characters detected WITH preprocessing:    260
+Improvement:                                     +15.56%
+
+✓ Accuracy report saved: accuracy_report.txt
+✓ Pipeline completed successfully!
+```
+
+## Using Your Own Documents
+
+To process your own invoices instead of samples:
+
+1. Place invoice images in `input_documents/`
+2. Run: `python ocr_pipeline.py`
+
+The script skips sample creation if folder already contains images.
+
+## Troubleshooting
+
+### "ModuleNotFoundError: No module named 'pytesseract'"
+
+Solution:
+```bash
+pip install pytesseract
+pip install pillow
+pip install opencv-python
+pip install numpy
+pip install scipy
+```
+
+### "pytesseract.TesseractNotFoundError: tesseract is not installed"
+
+Solution:
+1. Install Tesseract from step 1 (system-level installation)
+2. On Windows, ensure the installation path is in your PATH environment variable:
+   - Control Panel → System → Advanced system settings → Environment Variables
+   - Add `C:\Program Files\Tesseract-OCR` to PATH
+   - Or explicitly set in code (see Step 3)
+
+### "No module named 'cv2'" (OpenCV)
+
+Solution:
+```bash
+pip install opencv-python
+```
+
+### Images not processing / Empty output
+
+Check:
+1. Are images in correct format? (.png, .jpg, .jpeg, .bmp, .tiff)
+2. Are images at least 100x100 pixels?
+3. Run: `python ocr_pipeline.py` with `-v` flag for verbose output
+
+### Low OCR accuracy on your images
+
+Try:
+1. Ensure image resolution ≥ 150 DPI (300 DPI better)
+2. Check for shadows, reflections, poor lighting
+3. Ensure text is clear and legible to human eye first
+4. Adjust preprocessing parameters in `Config` class:
+   - `THRESHOLD_VALUE = 150` (try 140-160)
+   - `BLUR_KERNEL_SIZE = (3, 3)` (try (5, 5) for more noise)
+   - `MORPH_KERNEL_SIZE = (5, 5)` (try (7, 7) for aggressive)
+
+## Project Structure
+
+```
+Lab4_2_OCR_Tesseract/
+├── ocr_pipeline.py              # Main script
+├── requirements.txt             # Dependencies
+├── README.md                    # Full documentation
+├── answers.txt                  # Lab question answers
+├── SETUP.txt                    # This file
+├── accuracy_report.txt          # Generated after first run
+├── input_documents/             # Place your images here
+│   └── README.txt
+├── output_images/               # Generated preprocessed images
+└── output_json/                 # Generated JSON outputs
+```
+
+## Key Files Explained
+
+| File | Purpose |
+|------|---------|
+| `ocr_pipeline.py` | Main script - contains all OCR processing logic |
+| `requirements.txt` | Lists all Python package dependencies |
+| `README.md` | Complete project documentation |
+| `answers.txt` | Answers to all lab questions with detailed explanations |
+| `accuracy_report.txt` | Generated report comparing accuracy before/after preprocessing |
+
+## Next Steps
+
+1. ✓ Run `python ocr_pipeline.py` to test with sample images
+2. ✓ Review the generated files in `output_images/` and `output_json/`
+3. ✓ Check `accuracy_report.txt` to see preprocessing improvements
+4. ✓ Read `answers.txt` for detailed explanations of all concepts
+5. ✓ Replace sample images with your own invoices if desired
+6. ✓ Submit all files as lab assignment
+
+## Support
+
+For Tesseract issues: https://github.com/tesseract-ocr/tesseract/wiki
+For Pytesseract issues: https://github.com/madmaze/pytesseract
+For OpenCV help: https://opencv.org/
+
+---
+
+**Lab Status**: Ready for execution
+**Estimated First Run Time**: 30-60 seconds
+**Questions?** Check `README.md` and `answers.txt` for comprehensive documentation
