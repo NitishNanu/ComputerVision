@@ -4,9 +4,114 @@ import json
 import cv2
 import numpy as np
 from PIL import Image
-import pytesseract
 from pathlib import Path
 from datetime import datetime
+import subprocess
+import platform
+
+# Try to import pytesseract, fallback to easyocr if not available
+try:
+    import pytesseract
+    HAS_PYTESSERACT = True
+except ImportError:
+    HAS_PYTESSERACT = False
+
+try:
+    import easyocr
+    HAS_EASYOCR = True
+except ImportError:
+    HAS_EASYOCR = False
+
+# Global OCR reader
+ocr_reader = None
+ocr_engine = None  # 'pytesseract', 'easyocr', or None
+
+def configure_pytesseract():
+    """Configure pytesseract to find Tesseract executable based on OS"""
+    if platform.system() == 'Windows':
+        # Try common Windows installation paths
+        possible_paths = [
+            r'C:\Program Files\Tesseract-OCR\tesseract.exe',
+            r'C:\Program Files (x86)\Tesseract-OCR\tesseract.exe',
+        ]
+        
+        for path in possible_paths:
+            if os.path.exists(path):
+                pytesseract.pytesseract.pytesseract_cmd = path
+                print(f"[OK] Tesseract found at: {path}")
+                return True
+        
+        # Try to find it using 'where' command
+        try:
+            result = subprocess.run(['where', 'tesseract'], 
+                                  capture_output=True, text=True)
+            if result.returncode == 0:
+                path = result.stdout.strip()
+                pytesseract.pytesseract.pytesseract_cmd = path
+                print(f"[OK] Tesseract found at: {path}")
+                return True
+        except Exception:
+            pass
+        
+        print("[!] Tesseract not found in standard Windows paths")
+        return False
+    elif platform.system() == 'Darwin':
+        # macOS
+        try:
+            result = subprocess.run(['which', 'tesseract'],
+                                  capture_output=True, text=True)
+            if result.returncode == 0:
+                print(f"[OK] Tesseract found via which: {result.stdout.strip()}")
+                return True
+        except Exception:
+            pass
+        print("[!] Tesseract not found on macOS. Install with: brew install tesseract")
+        return False
+    else:
+        # Linux
+        try:
+            result = subprocess.run(['which', 'tesseract'],
+                                  capture_output=True, text=True)
+            if result.returncode == 0:
+                print(f"[OK] Tesseract found via which: {result.stdout.strip()}")
+                return True
+        except Exception:
+            pass
+        print("[!] Tesseract not found on Linux. Install with: sudo apt-get install tesseract-ocr")
+        return False
+
+def initialize_ocr():
+    """Initialize OCR engine - try pytesseract first, then easyocr"""
+    global ocr_reader, ocr_engine
+    
+    print("[*] Initializing OCR engine...")
+    
+    # Try pytesseract first
+    if HAS_PYTESSERACT:
+        print("  Attempting to use Tesseract (pytesseract)...")
+        if configure_pytesseract():
+            ocr_engine = 'pytesseract'
+            print(f"  [OK] Initialized Tesseract OCR engine")
+            return True
+    
+    # Fallback to easyocr
+    if HAS_EASYOCR:
+        print("  Attempting to use EasyOCR...")
+        try:
+            ocr_reader = easyocr.Reader(['en'], gpu=False)
+            ocr_engine = 'easyocr'
+            print(f"  [OK] Initialized EasyOCR engine")
+            return True
+        except Exception as e:
+            print(f"  [ERROR] EasyOCR initialization failed: {e}")
+            return False
+    
+    # No OCR engine available
+    print("\n[ERROR] No OCR engine available!")
+    print("   Install one of the following:")
+    print("   1. Tesseract: https://github.com/UB-Mannheim/tesseract/wiki")
+    print("   2. EasyOCR: pip install easyocr")
+    return False
 
 
 # ============================================================================
@@ -20,12 +125,12 @@ class Config:
     OUTPUT_JSON_DIR = 'output_json'
     ACCURACY_REPORT = 'accuracy_report.txt'
     
-    # Thresholding parameters
-    THRESHOLD_VALUE = 150
+    # Thresholding parameters - use Otsu's binary thresholding for adaptive adjustment
+    THRESHOLD_VALUE = 127  # Reduced from 150 for better text preservation
     MAX_VALUE = 255
     
     # Morphological operations
-    MORPH_KERNEL_SIZE = (5, 5)
+    MORPH_KERNEL_SIZE = (3, 3)  # Reduced from (5, 5) to preserve text details
     
     # Blur parameters
     BLUR_KERNEL_SIZE = (3, 3)
@@ -89,16 +194,16 @@ def ensure_directories_exist():
     """Create output directories if they don't exist"""
     for directory in [Config.OUTPUT_IMG_DIR, Config.OUTPUT_JSON_DIR]:
         Path(directory).mkdir(parents=True, exist_ok=True)
-        print(f"✓ Directory '{directory}' ready")
+        print(f"[OK] Directory '{directory}' ready")
 
 
 def load_image(image_path):
     try:
         image = Image.open(image_path)
-        print(f"✓ Loaded image: {os.path.basename(image_path)}")
+        print(f"[OK] Loaded image: {os.path.basename(image_path)}")
         return image
     except Exception as e:
-        print(f"✗ Error loading {image_path}: {e}")
+        print(f"[ERROR] Error loading {image_path}: {e}")
         return None
 
 
@@ -109,29 +214,52 @@ def preprocess_image(cv_image):
     # Step 2: Apply Gaussian blur (noise reduction)
     blurred = cv2.GaussianBlur(gray, Config.BLUR_KERNEL_SIZE, 0)
     
-    # Step 3: Apply binary thresholding
-    _, binary = cv2.threshold(blurred, Config.THRESHOLD_VALUE, 
-                              Config.MAX_VALUE, cv2.THRESH_BINARY)
+    # Step 3: Apply Otsu's binary thresholding (adaptive threshold)
+    _, binary = cv2.threshold(blurred, 0, Config.MAX_VALUE, 
+                              cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     
-    # Step 4: Apply morphological operations
-    # Kernel for morphological operations
+    # Step 4: Apply morphological operations (but more gently)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, Config.MORPH_KERNEL_SIZE)
     
-    # Closing: removes small black noise (holes in text)
-    closed = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+    # Light closing: removes small black noise (holes in text)
+    closed = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel, iterations=1)
     
-    # Opening: removes small white noise (speckles)
-    processed = cv2.morphologyEx(closed, cv2.MORPH_OPEN, kernel)
+    # Light opening: removes small white noise (speckles)
+    processed = cv2.morphologyEx(closed, cv2.MORPH_OPEN, kernel, iterations=1)
+    
+    # Optional: Apply dilation to make text slightly thicker for better OCR
+    # This helps preserve thin characters
+    dilate_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+    processed = cv2.dilate(processed, dilate_kernel, iterations=1)
     
     return processed
 
 
 def extract_text(image_pil):
+    """Extract text using the configured OCR engine"""
+    global ocr_reader, ocr_engine
+    
     try:
-        text = pytesseract.image_to_string(image_pil)
-        return text
+        if ocr_engine == 'pytesseract':
+            text = pytesseract.image_to_string(image_pil)
+            if not text or text.strip() == "":
+                print("  ⚠ Warning: Tesseract returned empty text. Check if Tesseract is properly installed.")
+            return text
+        
+        elif ocr_engine == 'easyocr':
+            # EasyOCR expects numpy array or file path
+            # Convert PIL to numpy array
+            img_np = np.array(image_pil)
+            results = ocr_reader.readtext(img_np, detail=0)
+            text = '\n'.join(results)
+            return text
+        
+        else:
+            print(f"[ERROR] No OCR engine initialized!")
+            return ""
+    
     except Exception as e:
-        print(f"✗ Error extracting text: {e}")
+        print(f"[ERROR] Error extracting text: {e}")
         return ""
 
 
@@ -152,10 +280,10 @@ def save_json(filename, data, output_dir):
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         
-        print(f"✓ Saved JSON: {json_filename}")
+        print(f"[OK] Saved JSON: {json_filename}")
         return json_path
     except Exception as e:
-        print(f"✗ Error saving JSON: {e}")
+        print(f"[ERROR] Error saving JSON: {e}")
         return None
 
 
@@ -165,10 +293,10 @@ def save_image(image_array, filename, output_dir):
         output_path = os.path.join(output_dir, output_filename)
         
         cv2.imwrite(output_path, image_array)
-        print(f"✓ Saved preprocessed image: {output_filename}")
+        print(f"[OK] Saved preprocessed image: {output_filename}")
         return output_path
     except Exception as e:
-        print(f"✗ Error saving image: {e}")
+        print(f"[ERROR] Error saving image: {e}")
         return None
 
 
@@ -186,7 +314,7 @@ def get_sample_images():
                          if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff'))]
         
         if not existing_files:  # If empty
-            print("\n📋 Creating sample invoice images for testing...")
+            print("\n[*] Creating sample invoice images for testing...")
             
             sample_texts = [
                 "INVOICE #001\nDate: 15/01/2024\nAmount: $500.50\nEmail: customer1@example.com",
@@ -221,19 +349,19 @@ def get_sample_images():
                     # Save with proper path handling
                     filename = os.path.join(Config.INPUT_DIR, f"sample_invoice_{i:02d}.png")
                     img.save(filename)
-                    print(f"  ✓ Created {os.path.basename(filename)}")
+                    print(f"  [OK] Created {os.path.basename(filename)}")
                 except Exception as sub_error:
-                    print(f"  ✗ Error creating image {i}: {sub_error}")
+                    print(f"  [ERROR] Error creating image {i}: {sub_error}")
                     continue
             
-            print("✓ Sample images created successfully\n")
+            print("[OK] Sample images created successfully\n")
         else:
-            print(f"\n✓ Found {len(existing_files)} image(s) in input_documents/\n")
+            print(f"\n[OK] Found {len(existing_files)} image(s) in input_documents/\n")
             
     except ImportError:
-        print("\n✗ PIL (Pillow) not installed. Run: pip install Pillow\n")
+        print("\n[ERROR] PIL (Pillow) not installed. Run: pip install Pillow\n")
     except Exception as e:
-        print(f"\n✗ Error in sample image creation: {e}\n")
+        print(f"\n[ERROR] Error in sample image creation: {e}\n")
         print("  Try manually adding images to input_documents/ folder\n")
 
 
@@ -361,9 +489,9 @@ extraction for business automation tasks.
     try:
         with open(Config.ACCURACY_REPORT, 'w', encoding='utf-8') as f:
             f.write(report)
-        print(f"\n✓ Accuracy report saved: {Config.ACCURACY_REPORT}")
+        print(f"\n[OK] Accuracy report saved: {Config.ACCURACY_REPORT}")
     except Exception as e:
-        print(f"✗ Error saving report: {e}")
+        print(f"[ERROR] Error saving report: {e}")
     
     print(report)
 
@@ -373,6 +501,13 @@ def main():
     print("OCR PIPELINE WITH TESSERACT - Lab 4.2")
     print("="*80 + "\n")
     
+    # Initialize OCR engine (try pytesseract first, fallback to easyocr)
+    if not initialize_ocr():
+        print("\n[ERROR] OCR initialization failed!")
+        print("   Please install EasyOCR: pip install easyocr")
+        print("   Or install Tesseract from: https://github.com/UB-Mannheim/tesseract/wiki\n")
+        return
+    
     # Ensure output directories exist
     ensure_directories_exist()
     
@@ -381,14 +516,14 @@ def main():
     
     # Check for input images
     if not os.path.exists(Config.INPUT_DIR):
-        print(f"✗ Error: '{Config.INPUT_DIR}' directory not found!")
+        print(f"[ERROR] '{Config.INPUT_DIR}' directory not found!")
         return
     
     image_files = [f for f in os.listdir(Config.INPUT_DIR) 
                    if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff'))]
     
     if not image_files:
-        print(f"✗ No image files found in '{Config.INPUT_DIR}'")
+        print(f"[ERROR] No image files found in '{Config.INPUT_DIR}'")
         print(f"   Please add invoice images (.png, .jpg, .jpeg, .bmp, .tiff)")
         print(f"   Or ensure sample images were created in the folder above.\n")
         return
@@ -409,7 +544,7 @@ def main():
     print("\n" + "="*80)
     generate_accuracy_report(all_results)
     
-    print("\n✓ Pipeline completed successfully!")
+    print("\n[OK] Pipeline completed successfully!")
     print(f"  - Preprocessed images saved to: {Config.OUTPUT_IMG_DIR}/")
     print(f"  - Extracted data saved to: {Config.OUTPUT_JSON_DIR}/")
 

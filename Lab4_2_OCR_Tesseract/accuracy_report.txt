@@ -1,59 +1,59 @@
 
 ================================================================================
 OCR ACCURACY COMPARISON REPORT
-Generated: 2026-02-25 10:25:30
+Generated: 2026-02-25 21:23:42
 ================================================================================
 
 SUMMARY STATISTICS
 --------------------------------------------------------------------------------
-Total characters detected WITHOUT preprocessing: 0
-Total characters detected WITH preprocessing:    0
-Improvement:                                     +0.00%
+Total characters detected WITHOUT preprocessing: 365
+Total characters detected WITH preprocessing:    203
+Improvement:                                     -44.38%
 
 ================================================================================
 DOCUMENT-BY-DOCUMENT BREAKDOWN
 --------------------------------------------------------------------------------
 
 Document: sample_invoice_01.png
-  - Characters (before):  0
-  - Characters (after):   0
-  - Improvement:          +0.00%
+  - Characters (before):  75
+  - Characters (after):   44
+  - Improvement:          -41.33%
   - Extracted Fields:
     • Dates found:        0
     • Amounts found:      0
     • Emails found:       0
 
 Document: sample_invoice_02.png
-  - Characters (before):  0
-  - Characters (after):   0
-  - Improvement:          +0.00%
+  - Characters (before):  72
+  - Characters (after):   37
+  - Improvement:          -48.61%
   - Extracted Fields:
     • Dates found:        0
     • Amounts found:      0
     • Emails found:       0
 
 Document: sample_invoice_03.png
-  - Characters (before):  0
-  - Characters (after):   0
-  - Improvement:          +0.00%
+  - Characters (before):  71
+  - Characters (after):   33
+  - Improvement:          -53.52%
   - Extracted Fields:
     • Dates found:        0
     • Amounts found:      0
     • Emails found:       0
 
 Document: sample_invoice_04.png
-  - Characters (before):  0
-  - Characters (after):   0
-  - Improvement:          +0.00%
+  - Characters (before):  69
+  - Characters (after):   43
+  - Improvement:          -37.68%
   - Extracted Fields:
     • Dates found:        0
     • Amounts found:      0
     • Emails found:       0
 
 Document: sample_invoice_05.png
-  - Characters (before):  0
-  - Characters (after):   0
-  - Improvement:          +0.00%
+  - Characters (before):  78
+  - Characters (after):   46
+  - Improvement:          -41.03%
   - Extracted Fields:
     • Dates found:        0
     • Amounts found:      0

@@ -23,8 +23,8 @@ from ultralytics import YOLO
 
 # Model configuration
 MODEL_NAME = "yolov8n"  # Nano version - fastest for real-time
-TARGET_CLASS = "person"  # Only detect people
-TARGET_CLASS_ID = 0  # COCO class ID for person
+DETECT_ALL_OBJECTS = True  # Detect all objects, not just persons
+TARGET_CLASS = "all"  # Detect all classes
 
 # Video configuration
 INPUT_VIDEO_PATH = "input_video/test.mp4"
@@ -125,8 +125,8 @@ def open_video_source(use_webcam=USE_WEBCAM, video_path=INPUT_VIDEO_PATH):
 
 def setup_video_writer(output_path, width, height, fps):
     try:
-        # Use MJPEG codec for better compatibility
-        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+        # Use mp4v codec for better compatibility and playback
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
         
         if not writer.isOpened():
@@ -143,7 +143,7 @@ def setup_video_writer(output_path, width, height, fps):
 def run_yolo_inference(model, frame, conf_threshold=CONFIDENCE_THRESHOLD):
     try:
         # Run inference (returns list of Results objects)
-        results = model(frame, conf=conf_threshold, verbose=False, device=0)
+        results = model(frame, conf=conf_threshold, verbose=False)
         return results[0] if results else None
         
     except Exception as e:
@@ -151,46 +151,47 @@ def run_yolo_inference(model, frame, conf_threshold=CONFIDENCE_THRESHOLD):
         return None
 
 
-def filter_detections_by_class(results, target_class_id=TARGET_CLASS_ID):
+def filter_detections_by_class(results, detect_all=DETECT_ALL_OBJECTS):
     if results is None or not hasattr(results, 'boxes'):
-        return [], [], 0
+        return [], [], [], 0
     
     boxes = []
     confidences = []
+    class_names = []
     
     try:
         for box in results.boxes:
-            # Get class ID
+            # Get class ID and name
             cls_id = int(box.cls[0])
+            cls_name = results.names[cls_id]
             
-            # Only keep person detections
-            if cls_id == target_class_id:
-                # Get bounding box coordinates (xyxy format)
-                xyxy = box.xyxy[0].cpu().numpy()
-                confidence = float(box.conf[0])
-                
-                boxes.append(xyxy)
-                confidences.append(confidence)
+            # Get bounding box coordinates (xyxy format) and confidence
+            xyxy = box.xyxy[0].cpu().numpy()
+            confidence = float(box.conf[0])
+            
+            boxes.append(xyxy)
+            confidences.append(confidence)
+            class_names.append(cls_name)
         
-        return boxes, confidences, len(boxes)
+        return boxes, confidences, class_names, len(boxes)
         
     except Exception as e:
         print(f"✗ Error filtering detections: {e}")
         return [], [], 0
 
 
-def draw_detections(frame, boxes, confidences, text_scale=0.6):
+def draw_detections(frame, boxes, confidences, class_names, text_scale=0.6):
     frame_copy = frame.copy()
     
     try:
-        for (x1, y1, x2, y2), conf in zip(boxes, confidences):
+        for (x1, y1, x2, y2), conf, cls_name in zip(boxes, confidences, class_names):
             x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
             
             # Draw bounding box
             cv2.rectangle(frame_copy, (x1, y1), (x2, y2), BOX_COLOR, FONT_THICKNESS)
             
-            # Prepare confidence text
-            conf_text = f"{conf:.2f}"
+            # Prepare class and confidence text
+            conf_text = f"{cls_name} {conf:.2f}"
             
             # Get text size for background
             text_size = cv2.getTextSize(
@@ -226,12 +227,12 @@ def draw_detections(frame, boxes, confidences, text_scale=0.6):
         return frame
 
 
-def draw_stats(frame, person_count, fps):
+def draw_stats(frame, object_count, fps):
     frame_copy = frame.copy()
     
     try:
-        # Person count text
-        count_text = f"People: {person_count}"
+        # Object count text
+        count_text = f"Objects: {object_count}"
         count_size = cv2.getTextSize(count_text, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2)[0]
         
         # Draw background for count
@@ -365,18 +366,18 @@ def main():
             # Run YOLO inference
             results = run_yolo_inference(model, frame)
             
-            # Filter detections to only persons
-            boxes, confidences, person_count = filter_detections_by_class(results)
-            total_people.append(person_count)
+            # Get all detections
+            boxes, confidences, class_names, object_count = filter_detections_by_class(results)
+            total_people.append(object_count)
             
             # Draw detections on frame
-            annotated_frame = draw_detections(frame, boxes, confidences)
+            annotated_frame = draw_detections(frame, boxes, confidences, class_names)
             
             # Get current FPS
             current_fps = fps_counter.get_fps()
             
             # Draw statistics
-            annotated_frame = draw_stats(annotated_frame, person_count, current_fps)
+            annotated_frame = draw_stats(annotated_frame, object_count, current_fps)
             
             # Write frame to output video
             writer.write(annotated_frame)
@@ -391,7 +392,7 @@ def main():
             
             # Print progress every 30 frames
             if frame_count % 30 == 0:
-                print(f"  Frame {frame_count:4d} | People: {person_count:2d} | FPS: {current_fps:.1f}")
+                print(f"  Frame {frame_count:4d} | Objects: {object_count:2d} | FPS: {current_fps:.1f}")
             
             # Check for ESC key to stop
             key = cv2.waitKey(1) & 0xFF
@@ -410,11 +411,12 @@ def main():
         print("="*80)
         print(f"✓ Total frames processed: {frame_count}")
         print(f"✓ Total frames saved: {frames_saved}")
-        print(f"✓ Average people per frame: {np.mean(total_people):.2f}")
-        print(f"✓ Max people in single frame: {np.max(total_people)}")
+        print(f"✓ Average objects per frame: {np.mean(total_people):.2f}")
+        print(f"✓ Max objects in single frame: {np.max(total_people)}")
         print(f"✓ Average FPS: {fps_counter.get_fps():.1f}")
         print(f"✓ Output video saved: {output_path}")
         print(f"✓ Sample frames saved: {OUTPUT_FRAMES_DIR}/")
+        print("✓ Video codec: mp4v (MP4 format for wide compatibility)")
         print("="*80 + "\n")
         
     except Exception as e:

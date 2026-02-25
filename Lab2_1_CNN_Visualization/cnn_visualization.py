@@ -17,7 +17,7 @@ from tensorflow.keras.models import Model
 
 IMAGE_WIDTH = 224
 IMAGE_HEIGHT = 224
-INPUT_IMAGE_PATH = "input_images/test.jpg"
+INPUT_IMAGE_PATH = "input_images/chest_image.jpg"
 OUTPUT_DIR = "output_images"
 LAYERS_TO_VISUALIZE = ["block1_conv1", "block3_conv3", "block5_conv3"]
 NUM_FILTERS_DISPLAY = 16  
