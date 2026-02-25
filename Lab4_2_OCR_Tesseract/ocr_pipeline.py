@@ -1,24 +1,3 @@
-"""
-OCR Pipeline with Tesseract
-=============================
-Lab 4.2 - B.Tech AI Course
-
-This module implements a complete OCR pipeline that:
-1. Loads document images from input_documents/
-2. Applies preprocessing techniques (grayscale, thresholding, noise removal)
-3. Extracts text using Tesseract OCR
-4. Compares results before and after preprocessing
-5. Extracts structured fields using regex patterns
-6. Saves results as JSON files
-7. Generates accuracy comparison report
-
-Dependencies:
-- pytesseract: Python wrapper for Google's Tesseract
-- PIL: Image processing
-- OpenCV: Advanced image preprocessing
-- numpy: Numerical operations
-"""
-
 import os
 import re
 import json
@@ -57,7 +36,6 @@ class Config:
 # ============================================================================
 
 class RegexPatterns:
-    """Regex patterns for extracting structured fields"""
     
     # Date patterns (multiple formats)
     DATE_PATTERNS = [
@@ -115,15 +93,6 @@ def ensure_directories_exist():
 
 
 def load_image(image_path):
-    """
-    Load an image from file.
-    
-    Args:
-        image_path (str): Path to the image file
-        
-    Returns:
-        PIL.Image: Loaded image, or None if loading fails
-    """
     try:
         image = Image.open(image_path)
         print(f"✓ Loaded image: {os.path.basename(image_path)}")
@@ -134,21 +103,6 @@ def load_image(image_path):
 
 
 def preprocess_image(cv_image):
-    """
-    Apply preprocessing techniques to improve OCR accuracy.
-    
-    Preprocessing steps:
-    1. Convert to grayscale (reduce color channels)
-    2. Apply Gaussian blur (reduce noise)
-    3. Apply binary thresholding (convert to black and white)
-    4. Apply morphological operations (remove small noise)
-    
-    Args:
-        cv_image (numpy.ndarray): Image in OpenCV format (BGR)
-        
-    Returns:
-        numpy.ndarray: Preprocessed image
-    """
     # Step 1: Convert to grayscale
     gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
     
@@ -173,15 +127,6 @@ def preprocess_image(cv_image):
 
 
 def extract_text(image_pil):
-    """
-    Extract text from image using Tesseract OCR.
-    
-    Args:
-        image_pil (PIL.Image): Image in PIL format
-        
-    Returns:
-        str: Extracted text
-    """
     try:
         text = pytesseract.image_to_string(image_pil)
         return text
@@ -191,20 +136,6 @@ def extract_text(image_pil):
 
 
 def extract_fields(text):
-    """
-    Extract structured fields from OCR text using regex patterns.
-    
-    Extracts:
-    - Dates (multiple formats)
-    - Currency amounts
-    - Email addresses
-    
-    Args:
-        text (str): Raw OCR text
-        
-    Returns:
-        dict: Dictionary containing extracted fields
-    """
     fields = {
         'dates': RegexPatterns.extract_dates(text),
         'amounts': RegexPatterns.extract_amounts(text),
@@ -214,17 +145,6 @@ def extract_fields(text):
 
 
 def save_json(filename, data, output_dir):
-    """
-    Save extracted data as JSON file.
-    
-    Args:
-        filename (str): Base filename for the JSON output
-        data (dict): Data to save
-        output_dir (str): Output directory path
-        
-    Returns:
-        str: Path to saved JSON file
-    """
     try:
         json_filename = f"{Path(filename).stem}_extracted.json"
         json_path = os.path.join(output_dir, json_filename)
@@ -240,17 +160,6 @@ def save_json(filename, data, output_dir):
 
 
 def save_image(image_array, filename, output_dir):
-    """
-    Save processed image to file.
-    
-    Args:
-        image_array (numpy.ndarray): Image array
-        filename (str): Base filename
-        output_dir (str): Output directory path
-        
-    Returns:
-        str: Path to saved image
-    """
     try:
         output_filename = f"{Path(filename).stem}_preprocessed.png"
         output_path = os.path.join(output_dir, output_filename)
@@ -264,10 +173,6 @@ def save_image(image_array, filename, output_dir):
 
 
 def get_sample_images():
-    """
-    Create sample invoice images for testing if input_documents is empty.
-    This allows the lab to run without manual image placement.
-    """
     try:
         from PIL import Image, ImageDraw, ImageFont
         import os
@@ -337,15 +242,6 @@ def get_sample_images():
 # ============================================================================
 
 def process_document(image_path):
-    """
-    Process a single document through the complete OCR pipeline.
-    
-    Args:
-        image_path (str): Path to the document image
-        
-    Returns:
-        dict: Results containing metrics and extracted data
-    """
     results = {
         'filename': os.path.basename(image_path),
         'text_before_preprocessing': '',
@@ -409,12 +305,6 @@ def process_document(image_path):
 
 
 def generate_accuracy_report(all_results):
-    """
-    Generate accuracy comparison report.
-    
-    Args:
-        all_results (list): List of results from all documents
-    """
     total_before = sum(r['characters_before'] for r in all_results)
     total_after = sum(r['characters_after'] for r in all_results)
     
@@ -479,7 +369,6 @@ extraction for business automation tasks.
 
 
 def main():
-    """Main execution function"""
     print("\n" + "="*80)
     print("OCR PIPELINE WITH TESSERACT - Lab 4.2")
     print("="*80 + "\n")

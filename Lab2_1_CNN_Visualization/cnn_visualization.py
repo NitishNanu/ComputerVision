@@ -1,13 +1,3 @@
-"""
-Lab 2.1: Understanding CNN Layers with VGG16
-CNN Feature Visualization and Interpretation
-
-Author: AI Student
-Date: 2026
-Purpose: Visualize feature maps from different layers of VGG16 to understand
-         how CNN learns hierarchical representations.
-"""
-
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -30,8 +20,7 @@ IMAGE_HEIGHT = 224
 INPUT_IMAGE_PATH = "input_images/test.jpg"
 OUTPUT_DIR = "output_images"
 LAYERS_TO_VISUALIZE = ["block1_conv1", "block3_conv3", "block5_conv3"]
-NUM_FILTERS_DISPLAY = 16  # Display first 16 filters in 4x4 grid
-
+NUM_FILTERS_DISPLAY = 16  
 
 # ============================================================================
 # UTILITY FUNCTIONS
@@ -49,15 +38,6 @@ def create_output_directory():
 
 
 def load_and_preprocess_image(image_path):
-    """
-    Load and preprocess image for VGG16 model.
-    
-    Args:
-        image_path (str): Path to the input image
-        
-    Returns:
-        tuple: (preprocessed_image_array, original_image_array)
-    """
     try:
         # Load image
         if not os.path.exists(image_path):
@@ -87,15 +67,6 @@ def load_and_preprocess_image(image_path):
 
 
 def build_vgg16_model(include_top=False):
-    """
-    Load pre-trained VGG16 model with ImageNet weights.
-    
-    Args:
-        include_top (bool): Whether to include fully connected layers
-        
-    Returns:
-        keras.Model: VGG16 model with specified configuration
-    """
     try:
         model = VGG16(
             weights='imagenet',
@@ -112,12 +83,6 @@ def build_vgg16_model(include_top=False):
 
 
 def print_model_summary(model):
-    """
-    Print comprehensive model summary.
-    
-    Args:
-        model (keras.Model): Model to summarize
-    """
     print("\n" + "="*80)
     print("VGG16 FULL MODEL SUMMARY")
     print("="*80)
@@ -126,16 +91,6 @@ def print_model_summary(model):
 
 
 def create_activation_models(base_model, layer_names):
-    """
-    Create sub-models to extract activations from specific layers.
-    
-    Args:
-        base_model (keras.Model): Base VGG16 model
-        layer_names (list): Names of target layers
-        
-    Returns:
-        dict: Dictionary mapping layer names to activation models
-    """
     activation_models = {}
     
     try:
@@ -160,16 +115,6 @@ def create_activation_models(base_model, layer_names):
 
 
 def extract_feature_maps(image, activation_models):
-    """
-    Extract feature maps from all activation models.
-    
-    Args:
-        image (np.array): Preprocessed image
-        activation_models (dict): Dictionary of activation models
-        
-    Returns:
-        dict: Dictionary mapping layer names to feature maps
-    """
     feature_maps = {}
     
     try:
@@ -189,15 +134,6 @@ def extract_feature_maps(image, activation_models):
 
 
 def normalize_image_for_display(img_array):
-    """
-    Normalize image array to 0-1 range for matplotlib display.
-    
-    Args:
-        img_array (np.array): Image array
-        
-    Returns:
-        np.array: Normalized image array
-    """
     # Handle different input shapes
     if len(img_array.shape) == 4:
         img_array = img_array[0]  # Remove batch dimension
@@ -215,17 +151,6 @@ def normalize_image_for_display(img_array):
 
 
 def visualize_layer_filters(feature_maps, layer_name, num_filters=16):
-    """
-    Visualize filters from a specific layer as a 4x4 grid.
-    
-    Args:
-        feature_maps (np.array): Feature maps from the layer (batch, height, width, channels)
-        layer_name (str): Name of the layer being visualized
-        num_filters (int): Number of filters to display (should be 16 for 4x4 grid)
-        
-    Returns:
-        matplotlib.figure.Figure: Figure object
-    """
     # Extract single sample and limit to first num_filters
     activations = feature_maps[0, :, :, :num_filters]  # (height, width, num_filters)
     
@@ -262,13 +187,6 @@ def visualize_layer_filters(feature_maps, layer_name, num_filters=16):
 
 
 def save_visualization(fig, layer_name):
-    """
-    Save visualization to output_images folder.
-    
-    Args:
-        fig (matplotlib.figure.Figure): Figure to save
-        layer_name (str): Name of the layer
-    """
     try:
         filename = f"{layer_name}.png"
         filepath = os.path.join(OUTPUT_DIR, filename)
@@ -282,13 +200,6 @@ def save_visualization(fig, layer_name):
 
 
 def display_layer_statistics(feature_maps, layer_name):
-    """
-    Display statistics about the feature maps from a layer.
-    
-    Args:
-        feature_maps (np.array): Feature maps from the layer
-        layer_name (str): Name of the layer
-    """
     print(f"\n--- Statistics for {layer_name} ---")
     print(f"Shape: {feature_maps.shape}")
     print(f"Min value: {feature_maps.min():.4f}")
@@ -303,9 +214,6 @@ def display_layer_statistics(feature_maps, layer_name):
 # ============================================================================
 
 def main():
-    """
-    Main function: Execute the complete CNN visualization workflow.
-    """
     print("\n" + "="*80)
     print("LAB 2.1: CNN FEATURE VISUALIZATION WITH VGG16")
     print("="*80 + "\n")

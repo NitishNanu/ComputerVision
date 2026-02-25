@@ -3,12 +3,6 @@ LAB 3.1: PRE-TRAINED OBJECT DETECTION WITH YOLO
 ANSWERS TO LAB QUESTIONS
 ================================================================================
 
-Student Name: [Nitish Kumar]
-Roll Number: [2310993894]
-Date: February 2026
-Submission Format: Professional Lab Assignment
-
-
 QUESTION A: Why was YOLOv8n chosen instead of larger models?
 ================================================================================
 

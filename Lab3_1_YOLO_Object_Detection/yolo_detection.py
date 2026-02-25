@@ -55,9 +55,6 @@ FPS_WINDOW = 30  # Calculate FPS over last 30 frames
 # ============================================================================
 
 def create_output_directories():
-    """
-    Create output directories if they don't exist.
-    """
     for directory in [OUTPUT_VIDEO_DIR, OUTPUT_FRAMES_DIR]:
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -67,15 +64,6 @@ def create_output_directories():
 
 
 def load_yolo_model(model_name=MODEL_NAME):
-    """
-    Load pre-trained YOLOv8 model.
-    
-    Args:
-        model_name (str): YOLO model variant (yolov8n, yolov8s, yolov8m, etc.)
-        
-    Returns:
-        YOLO: Loaded YOLO model
-    """
     try:
         print(f"Loading {model_name} model...")
         model = YOLO(f"{model_name}.pt")
@@ -89,16 +77,6 @@ def load_yolo_model(model_name=MODEL_NAME):
 
 
 def open_video_source(use_webcam=USE_WEBCAM, video_path=INPUT_VIDEO_PATH):
-    """
-    Open video source (webcam or video file).
-    
-    Args:
-        use_webcam (bool): If True, use webcam; otherwise use video file
-        video_path (str): Path to video file if not using webcam
-        
-    Returns:
-        tuple: (cv2.VideoCapture object, video info dict)
-    """
     try:
         if use_webcam:
             cap = cv2.VideoCapture(WEBCAM_ID)
@@ -146,18 +124,6 @@ def open_video_source(use_webcam=USE_WEBCAM, video_path=INPUT_VIDEO_PATH):
 
 
 def setup_video_writer(output_path, width, height, fps):
-    """
-    Set up video writer for output video.
-    
-    Args:
-        output_path (str): Full path to save video
-        width (int): Frame width
-        height (int): Frame height
-        fps (float): Frames per second
-        
-    Returns:
-        cv2.VideoWriter: Video writer object
-    """
     try:
         # Use MJPEG codec for better compatibility
         fourcc = cv2.VideoWriter_fourcc(*'MJPG')
@@ -175,17 +141,6 @@ def setup_video_writer(output_path, width, height, fps):
 
 
 def run_yolo_inference(model, frame, conf_threshold=CONFIDENCE_THRESHOLD):
-    """
-    Run YOLO inference on a single frame.
-    
-    Args:
-        model (YOLO): YOLO model
-        frame (np.ndarray): Input frame (BGR)
-        conf_threshold (float): Confidence threshold for detections
-        
-    Returns:
-        ultralytics.engine.results.Results: YOLO results object
-    """
     try:
         # Run inference (returns list of Results objects)
         results = model(frame, conf=conf_threshold, verbose=False, device=0)
@@ -197,16 +152,6 @@ def run_yolo_inference(model, frame, conf_threshold=CONFIDENCE_THRESHOLD):
 
 
 def filter_detections_by_class(results, target_class_id=TARGET_CLASS_ID):
-    """
-    Filter detections to only include target class (person).
-    
-    Args:
-        results: YOLO results object
-        target_class_id (int): COCO class ID to filter by
-        
-    Returns:
-        tuple: (list of boxes, list of confidences, count)
-    """
     if results is None or not hasattr(results, 'boxes'):
         return [], [], 0
     
@@ -235,18 +180,6 @@ def filter_detections_by_class(results, target_class_id=TARGET_CLASS_ID):
 
 
 def draw_detections(frame, boxes, confidences, text_scale=0.6):
-    """
-    Draw bounding boxes and confidence scores on frame.
-    
-    Args:
-        frame (np.ndarray): Input frame (BGR)
-        boxes (list): List of bounding box coordinates
-        confidences (list): List of confidence scores
-        text_scale (float): Text scale factor
-        
-    Returns:
-        np.ndarray: Frame with drawn detections
-    """
     frame_copy = frame.copy()
     
     try:
@@ -294,17 +227,6 @@ def draw_detections(frame, boxes, confidences, text_scale=0.6):
 
 
 def draw_stats(frame, person_count, fps):
-    """
-    Draw statistics (person count and FPS) on frame.
-    
-    Args:
-        frame (np.ndarray): Input frame (BGR)
-        person_count (int): Number of people detected
-        fps (float): Current FPS calculation
-        
-    Returns:
-        np.ndarray: Frame with drawn statistics
-    """
     frame_copy = frame.copy()
     
     try:
@@ -356,29 +278,14 @@ def draw_stats(frame, person_count, fps):
 
 
 class FPSCounter:
-    """
-    Efficient FPS counter using deque for sliding window.
-    """
     def __init__(self, window_size=FPS_WINDOW):
         self.window_size = window_size
         self.times = deque(maxlen=window_size)
     
     def update(self, current_time):
-        """
-        Update FPS calculation with current timestamp.
-        
-        Args:
-            current_time (float): Current timestamp in milliseconds
-        """
         self.times.append(current_time)
     
     def get_fps(self):
-        """
-        Calculate current FPS.
-        
-        Returns:
-            float: Current FPS (0 if insufficient data)
-        """
         if len(self.times) < 2:
             return 0.0
         
@@ -391,14 +298,6 @@ class FPSCounter:
 
 
 def save_annotated_frame(frame, frame_num, output_dir=OUTPUT_FRAMES_DIR):
-    """
-    Save an annotated frame as PNG image.
-    
-    Args:
-        frame (np.ndarray): Frame to save
-        frame_num (int): Frame number for filename
-        output_dir (str): Directory to save frame
-    """
     try:
         filename = os.path.join(output_dir, f"frame_{frame_num:04d}.png")
         cv2.imwrite(filename, frame)
@@ -412,9 +311,6 @@ def save_annotated_frame(frame, frame_num, output_dir=OUTPUT_FRAMES_DIR):
 # ============================================================================
 
 def main():
-    """
-    Main function: Execute complete YOLO detection workflow.
-    """
     print("\n" + "="*80)
     print("LAB 3.1: PRE-TRAINED OBJECT DETECTION WITH YOLO")
     print("="*80 + "\n")

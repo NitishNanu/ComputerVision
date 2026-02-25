@@ -3,11 +3,6 @@ LAB 2.1: UNDERSTANDING CNN LAYERS WITH VGG16
 ANSWERS TO LAB QUESTIONS
 ================================================================================
 
-Student Name: [Nitish Kumar]
-Roll Number: [2310993894]
-Date: February 2026
-Submission Format: Professional Lab Assignment
-
 
 QUESTION A: What does block1_conv1 detect?
 ================================================================================
