@@ -30,13 +30,13 @@ python cnn_visualization.py
 ### 2. **Lab 3.1: Pre-trained Object Detection with YOLO**
 **Location:** `Lab3_1_YOLO_Object_Detection/`
 
-Implement real-time multi-object detection using YOLOv8 for person detection in videos.
+Implement real-time multi-object detection using YOLOv8 for detecting all COCO dataset objects in videos.
 
 - **Objective:** Build a production-ready object detection system
 - **Key Concepts:** One-stage detectors, real-time processing, FPS optimization, video I/O
 - **Technologies:** YOLOv8n (ultralytics), OpenCV, NumPy
 - **Input:** Video files (MP4/AVI in `input_video/`) or webcam
-- **Output:** Annotated video with detection bounding boxes and statistics
+- **Output:** Annotated video with detection bounding boxes, class labels, and statistics
 - **Skills:** Pre-trained model usage, real-time inference, performance monitoring
 
 **Getting Started:**

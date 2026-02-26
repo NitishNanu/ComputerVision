@@ -51,23 +51,25 @@ pip install -r requirements.txt
 ### Step 2: Prepare Input Image
 
 Place your test image in the `input_images/` folder:
-- **Filename**: `test.jpg`
+- **Filename**: `chest_image.jpg` (or update `INPUT_IMAGE_PATH` in the script)
 - **Size**: Any size (will be resized to 224×224 for VGG16)
 - **Format**: JPG, PNG, or BMP
+- **Recommended**: Medical/radiography images for educational context
 
 ### Step 3: Run the Code
 
 ```bash
-python code.py
+python cnn_visualization.py
 ```
 
 The script will:
+✓ Create output_images directory if needed  
 ✓ Load VGG16 with ImageNet weights  
-✓ Create activation models for selected layers  
-✓ Load and preprocess your image  
-✓ Extract feature maps  
-✓ Generate 4×4 grid visualizations  
-✓ Save outputs to `output_images/`  
+✓ Load and preprocess your image (224×224 resize, ImageNet normalization)  
+✓ Create activation models for 3 selected layers  
+✓ Extract feature maps from each layer  
+✓ Generate 4×4 grid visualizations (16 filters per layer)  
+✓ Save outputs as PNG files to `output_images/`  
 
 ---
 

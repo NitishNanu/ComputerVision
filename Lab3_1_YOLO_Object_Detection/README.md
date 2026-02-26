@@ -2,15 +2,15 @@
 
 ## 📋 Lab Overview
 
-This laboratory exercise focuses on **using pre-trained YOLO (You Only Look Once) models for real-time multi-object detection**. Students will implement a person detection system using YOLOv8n that processes video frames, detects people, displays detection statistics, and saves the annotated output.
+This laboratory exercise focuses on **using pre-trained YOLO (You Only Look Once) models for real-time multi-object detection**. Students will implement an object detection system using YOLOv8n that processes video frames, detects all objects in the COCO dataset, displays detection statistics, and saves annotated output with real-time performance monitoring.
 
 ### Learning Objectives
 
 1. **Understand pre-trained model usage** - Load and use production-ready deep learning models
 2. **Implement real-time object detection** - Process video frames with minimal latency
-3. **Filter detections by class** - Extract specific object types from detection results
+3. **Handle multiple object classes** - Detect and visualize all COCO dataset classes
 4. **Calculate and monitor FPS** - Measure real-time performance metrics
-5. **Handle video I/O** - Read input video streams and write annotated output
+5. **Handle video I/O** - Read input video streams and write annotated output with proper codecs
 6. **Develop production code** - Error handling, structured functions, clean architecture
 7. **Understand one-stage detectors** - How YOLO differs from two-stage detectors (R-CNN family)
 
@@ -71,14 +71,14 @@ python yolo_detection.py
 
 **The script will:**
 - ✓ Load YOLOv8n model (automatic download on first run)
-- ✓ Open input video or webcam
+- ✓ Open input video or webcam stream
 - ✓ Process each frame with YOLO inference
-- ✓ Filter detections to only "person" class
-- ✓ Draw bounding boxes with confidence scores
-- ✓ Display real-time person count and FPS
+- ✓ Detect all COCO dataset objects (people, cars, animals, etc.)
+- ✓ Draw bounding boxes with class labels and confidence scores
+- ✓ Display real-time object count and FPS on video
 - ✓ Save annotated video to `output_video/detection_output.mp4`
-- ✓ Save 5 sample frames to `output_frames/`
-- ✓ Print summary statistics
+- ✓ Save 5 sample frames to `output_frames/` for verification
+- ✓ Print summary statistics and performance metrics
 
 **To stop processing:** Press `ESC` key
 
@@ -101,16 +101,18 @@ python yolo_detection.py
 - Detects objects with class labels and confidence scores
 - NMS (Non-Maximum Suppression) removes duplicate detections
 
-### 4. **Class Filtering**
-- Extracts only "person" detections (COCO class ID = 0)
-- Ignores other objects (cars, dogs, furniture, etc.)
-- Returns bounding box coordinates and confidence scores
+### 4. **Object Detection**
+- Runs deep learning model on each frame with NMS (Non-Maximum Suppression)
+- Detects all COCO dataset classes: people, vehicles, animals, furniture, etc.
+- Returns bounding box coordinates, class labels, and confidence scores
+- Applies confidence threshold filtering (default: 0.5)
 
 ### 5. **Visualization**
-- Draws green bounding boxes around detected people
-- Displays confidence score for each detection
-- Shows live person count (top-left)
-- Shows real-time FPS counter (top-right)
+- Draws green bounding boxes around all detected objects
+- Displays class label and confidence score for each detection
+- Shows live object count by class (top-left corner)
+- Shows real-time FPS counter (top-right corner)
+- Uses OpenCV text rendering for performance
 
 ### 6. **FPS Calculation**
 - Uses sliding window (last 30 frames) for smooth FPS estimation
@@ -128,16 +130,17 @@ python yolo_detection.py
 ## 💡 Understanding the Results
 
 ### Output Video (`detection_output.mp4`)
-- Same resolution and duration as input
-- Green boxes show detected people
+- Same resolution and duration as input video
+- Green boxes show all detected objects with class labels
 - Confidence score displayed above each box
-- Person count updated per frame
-- FPS counter shows real-time performance
+- Object counts updated per frame
+- FPS counter shows real-time inference performance
+- Uses MJPEG codec for broad compatibility and quick playback
 
 ### Sample Frames (`frame_XXXX.png`)
-- Snapshot frames saved at 30-frame intervals
-- Useful for verification without watching full video
-- Can be used in presentations or reports
+- Snapshot frames saved at regular intervals (every 30 frames by default)
+- Useful for verification and review without playing full video
+- Can be embedded in presentations or reports
 
 ### Console Output
 ```
