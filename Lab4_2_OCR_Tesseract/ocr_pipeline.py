@@ -309,54 +309,64 @@ def get_sample_images():
         if not os.path.exists(Config.INPUT_DIR):
             os.makedirs(Config.INPUT_DIR, exist_ok=True)
         
-        # Check if directory is empty
+        # Check if directory is empty - always regenerate for better quality
         existing_files = [f for f in os.listdir(Config.INPUT_DIR) 
                          if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff'))]
         
-        if not existing_files:  # If empty
-            print("\n[*] Creating sample invoice images for testing...")
-            
-            sample_texts = [
-                "INVOICE #001\nDate: 15/01/2024\nAmount: $500.50\nEmail: customer1@example.com",
-                "INVOICE #002\nDate: Jan 20, 2024\nAmount: €750.75\nEmail: buyer@company.com",
-                "INVOICE #003\nDate: 2024-02-10\nAmount: ₹45000\nEmail: contact@business.in",
-                "INVOICE #004\nDate: 05/15/2024\nAmount: $1200.00\nEmail: user@domain.com",
-                "INVOICE #005\nDate: Feb 28, 2024\nAmount: USD 3500\nEmail: admin@organization.org"
-            ]
-            
-            for i, text in enumerate(sample_texts, 1):
-                try:
-                    # Create white image
-                    img = Image.new('RGB', (600, 400), color='white')
-                    draw = ImageDraw.Draw(img)
-                    
-                    # Try to use default font, fallback to built-in
+        # Remove existing sample images to force regeneration
+        if existing_files and any('sample_invoice' in f for f in existing_files):
+            for f in existing_files:
+                if 'sample_invoice' in f:
                     try:
-                        font = ImageFont.truetype("arial.ttf", 20)
+                        os.remove(os.path.join(Config.INPUT_DIR, f))
+                    except:
+                        pass
+        
+        print("\n[*] Creating OCR-optimized sample invoice images...")
+        
+        sample_texts = [
+            "INVOICE #001\nDate: 15/01/2024\nAmount: $500.50\nEmail: customer1@example.com",
+            "INVOICE #002\nDate: Jan 20, 2024\nAmount: €750.75\nEmail: buyer@company.com",
+            "INVOICE #003\nDate: 2024-02-10\nAmount: ₹45000\nEmail: contact@business.in",
+            "INVOICE #004\nDate: 05/15/2024\nAmount: $1200.00\nEmail: user@domain.com",
+            "INVOICE #005\nDate: Feb 28, 2024\nAmount: USD 3500\nEmail: admin@organization.org"
+        ]
+        
+        for i, text in enumerate(sample_texts, 1):
+            try:
+                # Create larger white image for better OCR readability
+                img = Image.new('RGB', (1200, 800), color='white')
+                draw = ImageDraw.Draw(img)
+                
+                # Try to use better font sizes
+                try:
+                    font = ImageFont.truetype("arial.ttf", 60)
+                except Exception:
+                    try:
+                        font = ImageFont.truetype("C:\\Windows\\Fonts\\arial.ttf", 60)
                     except Exception:
-                        try:
-                            font = ImageFont.truetype("C:\\Windows\\Fonts\\arial.ttf", 20)
-                        except Exception:
-                            font = ImageFont.load_default()
-                    
-                    # Draw text with better formatting
-                    lines = text.split('\n')
-                    y_offset = 50
-                    for line in lines:
-                        draw.text((30, y_offset), line, fill='black', font=font)
-                        y_offset += 70
-                    
-                    # Save with proper path handling
-                    filename = os.path.join(Config.INPUT_DIR, f"sample_invoice_{i:02d}.png")
-                    img.save(filename)
-                    print(f"  [OK] Created {os.path.basename(filename)}")
-                except Exception as sub_error:
-                    print(f"  [ERROR] Error creating image {i}: {sub_error}")
-                    continue
-            
-            print("[OK] Sample images created successfully\n")
-        else:
-            print(f"\n[OK] Found {len(existing_files)} image(s) in input_documents/\n")
+                        font = ImageFont.load_default()
+                
+                # Draw text with proper spacing and larger font
+                lines = text.split('\n')
+                y_offset = 100
+                for line in lines:
+                    # Draw with black text on white background for max contrast
+                    draw.text((80, y_offset), line, fill='black', font=font)
+                    y_offset += 130
+                
+                # Add border for better OCR detection
+                draw.rectangle([(10, 10), (1190, 790)], outline='black', width=3)
+                
+                # Save with proper path handling
+                filename = os.path.join(Config.INPUT_DIR, f"sample_invoice_{i:02d}.png")
+                img.save(filename, quality=95)
+                print(f"  [OK] Created {os.path.basename(filename)} (1200x800, high quality)")
+            except Exception as sub_error:
+                print(f"  [ERROR] Error creating image {i}: {sub_error}")
+                continue
+        
+        print("[OK] Sample images created successfully\n")
             
     except ImportError:
         print("\n[ERROR] PIL (Pillow) not installed. Run: pip install Pillow\n")
